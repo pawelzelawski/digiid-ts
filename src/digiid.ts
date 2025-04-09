@@ -7,9 +7,34 @@ import {
   DigiIDVerificationResult 
 } from './types';
 
-// Use require for the CommonJS dependency installed from Git
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const Message = require('digibyte-message');
+// Moved require inside the function that uses it to potentially help mocking
+// and avoid top-level side effects if require itself does something complex.
+
+/**
+ * INTERNAL: Verifies the signature using the digibyte-message library.
+ * Exported primarily for testing purposes (mocking/spying).
+ * @internal
+ */
+export async function _internalVerifySignature(
+  uri: string,
+  address: string,
+  signature: string
+): Promise<boolean> {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const Message = require('digibyte-message');
+  try {
+    const messageInstance = new Message(uri);
+    // Assuming synchronous based on common bitcore patterns, but wrapping for safety
+    const isValidSignature = await Promise.resolve(
+      messageInstance.verify(address, signature)
+    );
+    return !!isValidSignature; // Ensure boolean return
+  } catch (e: any) {
+    // Re-throw specific errors (like format/checksum errors) from the underlying library
+    // to be caught by the main verification function.
+    throw new DigiIDError(`Signature verification failed: ${e.message || e}`);
+  }
+}
 
 /**
  * Generates a secure random nonce (hex string).
@@ -130,21 +155,22 @@ export async function verifyDigiIDCallback(
     throw new DigiIDError(`Nonce mismatch: URI contained "${receivedNonce}", expected "${expectedNonce}". Possible replay attack.`);
   }
 
-  // 4. Verify Signature using digibyte-message
+  // 4. Verify Signature using internal helper
   try {
-    // The bitcore-message standard expects the message string, address, and signature.
-    // The message signed is the full DigiID URI string.
-    const messageInstance = new Message(uri);
-    // The verify method might be synchronous or asynchronous depending on the underlying lib
-    // Assuming synchronous based on common bitcore patterns, but wrapping for safety
-    const isValidSignature = await Promise.resolve(messageInstance.verify(address, signature));
-
+    const isValidSignature = await _internalVerifySignature(uri, address, signature);
     if (!isValidSignature) {
-      throw new DigiIDError('Invalid signature.');
+        // If the helper returns false, throw the standard invalid signature error
+        throw new DigiIDError('Invalid signature.');
     }
-  } catch (e: any) {
-    // Catch potential errors from the verify function (e.g., invalid address/signature format)
-    throw new DigiIDError(`Signature verification failed: ${e.message || e}`);
+  } catch (error) {
+     // If _internalVerifySignature throws (e.g., due to format/checksum errors from the lib, or our re-thrown error),
+     // re-throw it. It should already be a DigiIDError.
+     if (error instanceof DigiIDError) {
+        throw error;
+     } else {
+        // Catch any unexpected errors and wrap them
+        throw new DigiIDError(`Unexpected error during signature verification: ${(error as Error).message}`);
+     }
   }
 
   // 5. Return successful result

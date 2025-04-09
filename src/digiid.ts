@@ -1,4 +1,6 @@
 import { randomBytes } from 'crypto';
+// Import createRequire for CJS dependencies in ESM
+import { createRequire } from 'module';
 import { 
   DigiIDUriOptions, 
   DigiIDError, 
@@ -20,6 +22,8 @@ export async function _internalVerifySignature(
   address: string,
   signature: string
 ): Promise<boolean> {
+  // Create a require function scoped to this module
+  const require = createRequire(import.meta.url);
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const Message = require('digibyte-message');
   try {

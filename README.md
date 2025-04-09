@@ -131,6 +131,16 @@ app.post('/api/digiid/callback', async (req, res) => {
 
 (Refer to `src/types.ts` for detailed interface definitions)
 
+## Running Examples
+
+Examples are available in the `examples/` directory. You can run them using `ts-node` via the Node.js loader:
+
+```bash
+# Ensure ts-node is installed (npm install -D ts-node)
+node --loader ts-node/esm examples/generate-uri.ts
+node --loader ts-node/esm examples/verify-callback-example.ts
+```
+
 ## Dependencies
 
 This library currently uses a specific commit from a fork of `bitcore-message` (`digicontributer/bitcore-message`) for signature verification, matching the original `digiid-js` library. This is an older dependency.

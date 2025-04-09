@@ -1,0 +1,63 @@
+{
+  "name": "digiid-ts",
+  "version": "0.1.0",
+  "description": "A modern TypeScript implementation of the DigiID authentication protocol.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && vite build",
+    "dev": "vite",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "prepublishOnly": "npm run lint && npm run test && npm run build"
+  },
+  "keywords": [
+    "digiid",
+    "digibyte",
+    "authentication",
+    "crypto",
+    "typescript"
+  ],
+  "author": "Pawel Zelawski",
+  "license": "MIT",
+  "homepage": "https://pzelawski.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pawelzelawski/digiid-ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pawelzelawski/digiid-ts/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.1",
+    "@typescript-eslint/parser": "^8.29.1",
+    "@vitest/coverage-v8": "^3.1.1",
+    "eslint": "^9.24.0",
+    "eslint-config-prettier": "^10.1.1",
+    "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.5",
+    "vitest": "^3.1.1"
+  },
+  "dependencies": {
+    "digibyte-message": "github:digicontributer/bitcore-message#9d9c8ad30158db25f683e2dee746a14a9d7ec8a0"
+  }
+}

@@ -1,5 +1,12 @@
 // examples/generate-uri.ts
 
+/**
+ * Example: Generating a Digi-ID URI
+ * 
+ * This example demonstrates how to generate a Digi-ID URI that can be displayed as a QR code
+ * for users to scan with their Digi-ID compatible wallet.
+ */
+
 // Import directly from src for running locally before publishing
 // In a real project, you'd import from 'digiid-ts' after installing
 // Revert extension, ts-node should handle this when configured

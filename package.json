@@ -72,5 +72,9 @@
   },
   "dependencies": {
     "digibyte-message": "github:digicontributer/bitcore-message#9d9c8ad30158db25f683e2dee746a14a9d7ec8a0"
+  },
+  "overrides": {
+    "elliptic": "^6.6.1",
+    "lodash": "^4.17.21"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "digiid-ts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A modern TypeScript implementation of the DigiID authentication protocol.",
   "main": "dist/digiid-ts.umd.js",
   "module": "dist/digiid-ts.es.js",

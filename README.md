@@ -17,8 +17,21 @@ Provides utilities for generating Digi-ID URIs for QR code display and verifying
 ## Installation
 
 ```bash
+# Using npm
 npm install digiid-ts
+
+# Using yarn
+yarn add digiid-ts
+
+# Using pnpm
+pnpm add digiid-ts
 ```
+
+The package provides both ESM and UMD builds, with full TypeScript type definitions.
+
+### Requirements
+- Node.js 16.0.0 or higher
+- TypeScript 4.5 or higher (for TypeScript users)
 
 ## Usage
 

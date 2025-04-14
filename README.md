@@ -8,9 +8,10 @@ Provides utilities for generating Digi-ID URIs for QR code display and verifying
 
 *   Generates Digi-ID URIs according to the specification.
 *   Verifies Digi-ID callback signatures and data.
+*   Verifies signatures from all standard DigiByte address types (Legacy, SegWit P2SH, Native SegWit/Bech32).
 *   Full TypeScript support with comprehensive type definitions.
 *   Modern ES modules support.
-*   Zero dependencies (except for Node.js built-ins).
+*   Minimal dependencies, relying on standard cryptographic libraries.
 *   Comprehensive test coverage.
 *   Detailed error messages for debugging.
 

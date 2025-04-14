@@ -1,22 +1,22 @@
 {
   "name": "digiid-ts",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "A modern TypeScript implementation of the DigiID authentication protocol.",
   "main": "dist/digiid-ts.umd.js",
   "module": "dist/digiid-ts.es.js",
   "types": "dist/index.d.ts",
   "type": "module",
-  "exports": { 
-    ".": { 
-      "import": { 
-        "types": "./dist/index.d.ts", 
-        "default": "./dist/digiid-ts.es.js" 
-      }, 
-      "require": { 
-        "types": "./dist/index.d.ts", 
-        "default": "./dist/digiid-ts.umd.js" 
-      } 
-    } 
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/digiid-ts.es.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/digiid-ts.umd.js"
+      }
+    }
   },
   "files": [
     "dist"
@@ -71,7 +71,7 @@
     "vitest": "^3.1.1"
   },
   "dependencies": {
-    "digibyte-message": "github:digicontributer/bitcore-message#9d9c8ad30158db25f683e2dee746a14a9d7ec8a0"
+    "bitcoinjs-message": "^2.2.0"
   },
   "overrides": {
     "elliptic": "^6.6.1",

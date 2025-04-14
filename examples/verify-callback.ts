@@ -5,8 +5,14 @@
  * The callback contains a signature that needs to be verified against the original challenge.
  */
 
-// Import directly from src for running locally before publishing
-// In a real project, you'd import from 'digiid-ts' after installing
-import { verifyDigiIDCallback, DigiIDError } from '../src/index';
+// This example assumes you have a basic Express.js server setup.
+// Run with: ts-node examples/verify-callback.ts
+
+// Import only what's needed
+
+// In-memory store for demo purposes. Replace with a database in production.
+// Store nonce => { expectedUrl: string, timestamp: number }
+const nonceStore = new Map<string, { expectedUrl: string; timestamp: number }>();
+const NONCE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
 // ... existing code ... 

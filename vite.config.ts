@@ -1,6 +1,11 @@
+import path, { resolve } from 'path'; // Import path module
+import { fileURLToPath } from 'url'; // Import for ESM __dirname alternative
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts'; // Plugin to generate consolidated .d.ts file
-import { resolve } from 'path';
+
+// Get current directory path in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/guide/build.html#library-mode
 export default defineConfig({
@@ -20,14 +25,14 @@ export default defineConfig({
     rollupOptions: {
       // Make sure to externalize deps that shouldn't be bundled
       // into your library (e.g., peer dependencies)
-      external: ['crypto', 'module', 'digibyte-message'], // Externalize Node built-ins and the core dependency
+      external: ['crypto', 'module', 'bitcoinjs-message'], // Externalize Node built-ins and the core dependency
       output: {
         // Provide global variables to use in the UMD build
         // for externalized deps
         globals: {
           crypto: 'crypto', // Map 'crypto' import to global 'crypto' (Node)
           module: 'module', // Map 'module' import to global 'module' (Node)
-          'digibyte-message': 'DigibyteMessage' // Example global name if needed, might not be necessary for UMD if only used internally
+          'bitcoinjs-message': 'bitcoinjsMessage' // Map 'bitcoinjs-message' to global 'bitcoinjsMessage'
         },
       },
     },

@@ -1,19 +1,20 @@
 import { randomBytes } from 'crypto';
 // Import createRequire for CJS dependencies in ESM
-import { createRequire } from 'module';
-import { 
-  DigiIDUriOptions, 
-  DigiIDError, 
-  DigiIDCallbackData, 
-  DigiIDVerifyOptions, 
-  DigiIDVerificationResult 
+// import { createRequire } from 'module'; // No longer needed for bitcoinjs-message
+import * as bitcoinMessage from 'bitcoinjs-message';
+import {
+  DigiIDCallbackData,
+  DigiIDError,
+  DigiIDUriOptions,
+  DigiIDVerificationResult,
+  DigiIDVerifyOptions
 } from './types';
 
 // Moved require inside the function that uses it to potentially help mocking
 // and avoid top-level side effects if require itself does something complex.
 
 /**
- * INTERNAL: Verifies the signature using the digibyte-message library.
+ * INTERNAL: Verifies the signature using the bitcoinjs-message library.
  * Exported primarily for testing purposes (mocking/spying).
  * @internal
  */
@@ -22,21 +23,23 @@ export async function _internalVerifySignature(
   address: string,
   signature: string
 ): Promise<boolean> {
-  // Create a require function scoped to this module
-  const require = createRequire(import.meta.url);
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const Message = require('digibyte-message');
+  // DigiByte Message Prefix
+  const messagePrefix = '\x19DigiByte Signed Message:\n';
+
   try {
-    const messageInstance = new Message(uri);
-    // Assuming synchronous based on common bitcore patterns, but wrapping for safety
-    const isValidSignature = await Promise.resolve(
-      messageInstance.verify(address, signature)
+    // bitcoinjs-message verify function
+    const isValidSignature = bitcoinMessage.verify(
+      uri,              // The message that was signed (the DigiID URI)
+      address,          // The DigiByte address (D..., S..., or dgb1...)
+      signature,        // The signature string (Base64 encoded)
+      messagePrefix,    // The DigiByte specific message prefix
+      true              // Set checkSegwitAlways to true to handle all address types correctly
     );
     return !!isValidSignature; // Ensure boolean return
-  } catch (e: any) {
-    // Re-throw specific errors (like format/checksum errors) from the underlying library
-    // to be caught by the main verification function.
-    throw new DigiIDError(`Signature verification failed: ${e.message || e}`);
+  } catch (e: unknown) {
+    // Catch potential errors from bitcoinjs-message (e.g., invalid address format, invalid signature format)
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    throw new DigiIDError(`Signature verification failed: ${errorMessage}`);
   }
 }
 
@@ -163,18 +166,18 @@ export async function verifyDigiIDCallback(
   try {
     const isValidSignature = await _internalVerifySignature(uri, address, signature);
     if (!isValidSignature) {
-        // If the helper returns false, throw the standard invalid signature error
-        throw new DigiIDError('Invalid signature.');
+      // If the helper returns false, throw the standard invalid signature error
+      throw new DigiIDError('Invalid signature.');
     }
   } catch (error) {
-     // If _internalVerifySignature throws (e.g., due to format/checksum errors from the lib, or our re-thrown error),
-     // re-throw it. It should already be a DigiIDError.
-     if (error instanceof DigiIDError) {
-        throw error;
-     } else {
-        // Catch any unexpected errors and wrap them
-        throw new DigiIDError(`Unexpected error during signature verification: ${(error as Error).message}`);
-     }
+    // If _internalVerifySignature throws (e.g., due to format/checksum errors from the lib, or our re-thrown error),
+    // re-throw it. It should already be a DigiIDError.
+    if (error instanceof DigiIDError) {
+      throw error;
+    } else {
+      // Catch any unexpected errors and wrap them
+      throw new DigiIDError(`Unexpected error during signature verification: ${(error as Error).message}`);
+    }
   }
 
   // 5. Return successful result

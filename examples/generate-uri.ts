@@ -10,7 +10,7 @@
 // Import directly from src for running locally before publishing
 // In a real project, you'd import from 'digiid-ts' after installing
 // Revert extension, ts-node should handle this when configured
-import { generateDigiIDUri, DigiIDError } from '../src/index'; 
+import { DigiIDError, generateDigiIDUri } from '../src/index';
 
 console.log('--- DigiID URI Generation Example ---');
 
@@ -26,6 +26,7 @@ try {
   console.log(`  Generated: ${secureUri}`);
   // Typically, you would now generate a QR code from secureUri
 } catch (error) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   console.error('Error generating secure URI:', (error as Error).message);
 }
 
@@ -67,7 +68,7 @@ const invalidUrlOptions = {
 
 console.log('\nAttempting URI with Invalid URL (expecting error):');
 try {
-  generateDigiIDUri(invalidUrlOptions as any);
+  generateDigiIDUri(invalidUrlOptions);
 } catch (error) {
   if (error instanceof DigiIDError) {
     console.log(`  Caught expected DigiIDError: ${error.message}`);

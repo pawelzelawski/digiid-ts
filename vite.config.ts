@@ -25,14 +25,12 @@ export default defineConfig({
     rollupOptions: {
       // Make sure to externalize deps that shouldn't be bundled
       // into your library (e.g., peer dependencies)
-      external: ['crypto', 'module', 'bitcoinjs-message'], // Externalize Node built-ins and the core dependency
+      external: ['crypto'], // Externalize Node built-ins
       output: {
         // Provide global variables to use in the UMD build
         // for externalized deps
         globals: {
           crypto: 'crypto', // Map 'crypto' import to global 'crypto' (Node)
-          module: 'module', // Map 'module' import to global 'module' (Node)
-          'bitcoinjs-message': 'bitcoinjsMessage' // Map 'bitcoinjs-message' to global 'bitcoinjsMessage'
         },
       },
     },

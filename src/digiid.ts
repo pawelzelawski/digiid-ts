@@ -1,7 +1,7 @@
+import { secp256k1 } from '@noble/curves/secp256k1.js';
+import { ripemd160 } from '@noble/hashes/ripemd160';
+import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes } from 'crypto';
-// Import createRequire for CJS dependencies in ESM
-// import { createRequire } from 'module'; // No longer needed for bitcoinjs-message
-import * as bitcoinMessage from 'bitcoinjs-message';
 import {
   DigiIDCallbackData,
   DigiIDError,
@@ -10,11 +10,263 @@ import {
   DigiIDVerifyOptions
 } from './types';
 
-// Moved require inside the function that uses it to potentially help mocking
-// and avoid top-level side effects if require itself does something complex.
+/**
+ * Base58 alphabet used for Bitcoin/DigiByte addresses
+ */
+const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
 /**
- * INTERNAL: Verifies the signature using the bitcoinjs-message library.
+ * Decode a base58 string to bytes
+ */
+function base58Decode(str: string): Uint8Array {
+  const bytes: number[] = [0];
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (!char) continue;
+    const value = BASE58_ALPHABET.indexOf(char);
+    if (value === -1) throw new Error('Invalid base58 character');
+
+    for (let j = 0; j < bytes.length; j++) {
+      bytes[j]! *= 58;
+    }
+    bytes[0]! += value;
+
+    let carry = 0;
+    for (let j = 0; j < bytes.length; j++) {
+      const byte = bytes[j]!;
+      bytes[j] = byte + carry;
+      carry = bytes[j]! >> 8;
+      bytes[j]! &= 0xff;
+    }
+    while (carry > 0) {
+      bytes.push(carry & 0xff);
+      carry >>= 8;
+    }
+  }
+
+  // Add leading zeros
+  for (let i = 0; i < str.length && str[i] === '1'; i++) {
+    bytes.push(0);
+  }
+
+  return new Uint8Array(bytes.reverse());
+}
+
+/**
+ * Decode a bech32 address (simplified for verification purposes)
+ */
+function decodeBech32(address: string): { version: number; program: Uint8Array } | null {
+  const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+
+  const lowerAddr = address.toLowerCase();
+  const parts = lowerAddr.split('1');
+  if (parts.length !== 2) return null;
+
+  const hrp = parts[0];
+  const data = parts[1];
+  if (!hrp || !data) return null;
+  if (hrp !== 'dgb') return null;
+
+  const values: number[] = [];
+  for (const char of data) {
+    const val = CHARSET.indexOf(char);
+    if (val === -1) return null;
+    values.push(val);
+  }
+
+  // Remove checksum (last 6 chars)
+  const payload = values.slice(0, -6);
+  if (payload.length < 1) return null;
+
+  const version = payload[0];
+  if (version === undefined) return null;
+
+  // Convert from 5-bit to 8-bit
+  const converted = convertBits(payload.slice(1), 5, 8, false);
+  if (!converted) return null;
+
+  return { version, program: new Uint8Array(converted) };
+}
+
+/**
+ * Convert bits between different bit groups
+ */
+function convertBits(data: number[], fromBits: number, toBits: number, pad: boolean): number[] | null {
+  let acc = 0;
+  let bits = 0;
+  const result: number[] = [];
+  const maxv = (1 << toBits) - 1;
+
+  for (const value of data) {
+    if (value < 0 || value >> fromBits !== 0) return null;
+    acc = (acc << fromBits) | value;
+    bits += fromBits;
+    while (bits >= toBits) {
+      bits -= toBits;
+      result.push((acc >> bits) & maxv);
+    }
+  }
+
+  if (pad) {
+    if (bits > 0) result.push((acc << (toBits - bits)) & maxv);
+  } else if (bits >= fromBits || ((acc << (toBits - bits)) & maxv)) {
+    return null;
+  }
+
+  return result;
+}
+
+/**
+ * Hash message with Bitcoin/DigiByte message signing format
+ */
+function hashMessage(message: string, messagePrefix: string): Uint8Array {
+  const prefixBuffer = new TextEncoder().encode(messagePrefix);
+  const prefixLength = new Uint8Array([prefixBuffer.length]);
+
+  const messageBuffer = new TextEncoder().encode(message);
+  const messageLengthBytes: number[] = [];
+  let messageLength = messageBuffer.length;
+
+  // Encode message length as variable-length integer
+  if (messageLength < 0xfd) {
+    messageLengthBytes.push(messageLength);
+  } else if (messageLength <= 0xffff) {
+    messageLengthBytes.push(0xfd, messageLength & 0xff, (messageLength >> 8) & 0xff);
+  } else if (messageLength <= 0xffffffff) {
+    messageLengthBytes.push(
+      0xfe,
+      messageLength & 0xff,
+      (messageLength >> 8) & 0xff,
+      (messageLength >> 16) & 0xff,
+      (messageLength >> 24) & 0xff
+    );
+  } else {
+    throw new Error('Message too long');
+  }
+
+  const messageLengthBuffer = new Uint8Array(messageLengthBytes);
+
+  // Concatenate: prefixLength + prefix + messageLengthBuffer + message
+  const totalLength = prefixLength.length + prefixBuffer.length + messageLengthBuffer.length + messageBuffer.length;
+  const combined = new Uint8Array(totalLength);
+  let offset = 0;
+
+  combined.set(prefixLength, offset);
+  offset += prefixLength.length;
+  combined.set(prefixBuffer, offset);
+  offset += prefixBuffer.length;
+  combined.set(messageLengthBuffer, offset);
+  offset += messageLengthBuffer.length;
+  combined.set(messageBuffer, offset);
+
+  // Double SHA256
+  return sha256(sha256(combined));
+}
+
+/**
+ * Recover public key from signature
+ */
+function recoverPublicKey(messageHash: Uint8Array, signature: Uint8Array): Uint8Array[] {
+  if (signature.length !== 65) {
+    throw new Error('Invalid signature length');
+  }
+
+  const firstByte = signature[0];
+  if (firstByte === undefined) throw new Error('Invalid signature');
+
+  const recoveryId = firstByte - 27;
+  const compressed = recoveryId >= 4;
+  const actualRecoveryId = recoveryId % 4;
+
+  if (actualRecoveryId > 3) {
+    throw new Error('Invalid recovery ID');
+  }
+
+  const r = signature.slice(1, 33);
+  const s = signature.slice(33, 65);
+
+  // Create signature object
+  const sig = new secp256k1.Signature(
+    BigInt('0x' + Array.from(r).map(b => b.toString(16).padStart(2, '0')).join('')),
+    BigInt('0x' + Array.from(s).map(b => b.toString(16).padStart(2, '0')).join(''))
+  );
+
+  try {
+    const point = sig.recoverPublicKey(messageHash);
+    return [point.toHex(compressed)].map(hex => {
+      // Convert hex string to Uint8Array
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < hex.length; i += 2) {
+        bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+      }
+      return bytes;
+    });
+  } catch {
+    throw new Error('Failed to recover public key');
+  }
+}
+
+/**
+ * Hash160: RIPEMD160(SHA256(data))
+ */
+function hash160(buffer: Uint8Array): Uint8Array {
+  return ripemd160(sha256(buffer));
+}
+
+/**
+ * Verify address matches public key
+ */
+function verifyAddress(address: string, publicKey: Uint8Array): boolean {
+  // Legacy address (starts with D or S)
+  if (address.startsWith('D') || address.startsWith('S')) {
+    try {
+      const decoded = base58Decode(address);
+      if (decoded.length < 25) return false;
+
+      const payload = decoded.slice(0, -4);
+      const checksum = decoded.slice(-4);
+
+      const hash = sha256(sha256(payload));
+      const expectedChecksum = hash.slice(0, 4);
+
+      // Verify checksum
+      if (!checksum.every((byte, i) => byte === expectedChecksum[i])) {
+        return false;
+      }
+
+      const pubKeyHash = payload.slice(1);
+      const computedHash = hash160(publicKey);
+
+      return pubKeyHash.every((byte, i) => byte === computedHash[i]);
+    } catch {
+      return false;
+    }
+  }
+
+  // Bech32 address (starts with dgb1)
+  if (address.toLowerCase().startsWith('dgb1')) {
+    try {
+      const decoded = decodeBech32(address);
+      if (!decoded) return false;
+
+      const { version, program } = decoded;
+
+      if (version === 0) {
+        const computedHash = hash160(publicKey);
+        return program.every((byte, i) => byte === computedHash[i]);
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * INTERNAL: Verifies the signature using @noble/curves.
  * Exported primarily for testing purposes (mocking/spying).
  * @internal
  */
@@ -27,17 +279,28 @@ export async function _internalVerifySignature(
   const messagePrefix = '\x19DigiByte Signed Message:\n';
 
   try {
-    // bitcoinjs-message verify function
-    const isValidSignature = bitcoinMessage.verify(
-      uri,              // The message that was signed (the DigiID URI)
-      address,          // The DigiByte address (D..., S..., or dgb1...)
-      signature,        // The signature string (Base64 encoded)
-      messagePrefix,    // The DigiByte specific message prefix
-      true              // Set checkSegwitAlways to true to handle all address types correctly
-    );
-    return !!isValidSignature; // Ensure boolean return
+    // Decode base64 signature
+    const sigBytes = Uint8Array.from(atob(signature), c => c.charCodeAt(0));
+
+    if (sigBytes.length !== 65) {
+      throw new Error('Invalid signature length');
+    }
+
+    // Hash the message
+    const messageHash = hashMessage(uri, messagePrefix);
+
+    // Recover public key from signature
+    const publicKeys = recoverPublicKey(messageHash, sigBytes);
+
+    // Verify that at least one recovered public key matches the address
+    for (const pubKey of publicKeys) {
+      if (verifyAddress(address, pubKey)) {
+        return true;
+      }
+    }
+
+    return false;
   } catch (e: unknown) {
-    // Catch potential errors from bitcoinjs-message (e.g., invalid address format, invalid signature format)
     const errorMessage = e instanceof Error ? e.message : String(e);
     throw new DigiIDError(`Signature verification failed: ${errorMessage}`);
   }

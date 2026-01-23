@@ -178,7 +178,7 @@ function recoverPublicKey(messageHash: Uint8Array, signature: Uint8Array): Uint8
   const compressed = recoveryId >= 4;
   const actualRecoveryId = recoveryId % 4;
 
-  if (actualRecoveryId > 3) {
+  if (actualRecoveryId < 0 || actualRecoveryId > 3) {
     throw new Error('Invalid recovery ID');
   }
 
@@ -189,20 +189,23 @@ function recoverPublicKey(messageHash: Uint8Array, signature: Uint8Array): Uint8
   const sig = new secp256k1.Signature(
     BigInt('0x' + Array.from(r).map(b => b.toString(16).padStart(2, '0')).join('')),
     BigInt('0x' + Array.from(s).map(b => b.toString(16).padStart(2, '0')).join(''))
-  );
+  ).addRecoveryBit(actualRecoveryId);
 
   try {
     const point = sig.recoverPublicKey(messageHash);
-    return [point.toHex(compressed)].map(hex => {
-      // Convert hex string to Uint8Array
-      const bytes = new Uint8Array(hex.length / 2);
-      for (let i = 0; i < hex.length; i += 2) {
-        bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
-      }
-      return bytes;
-    });
-  } catch {
-    throw new Error('Failed to recover public key');
+    // Return both compressed and uncompressed versions to try both
+    const compressedBytes = point.toBytes(true);
+    const uncompressedBytes = point.toBytes(false);
+
+    // Based on the recoveryId flag, return the appropriate format(s)
+    if (compressed) {
+      return [compressedBytes];
+    } else {
+      // For uncompressed signatures, try both formats as different wallets may encode differently
+      return [uncompressedBytes, compressedBytes];
+    }
+  } catch (e) {
+    throw new Error('Failed to recover public key: ' + (e instanceof Error ? e.message : String(e)));
   }
 }
 

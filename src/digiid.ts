@@ -255,7 +255,17 @@ function verifyAddress(address: string, publicKey: Uint8Array): boolean {
       const { version, program } = decoded;
 
       if (version === 0) {
-        const computedHash = hash160(publicKey);
+        // For witness v0 P2WPKH, use hash160 of compressed public key
+        let pkToHash = publicKey;
+        // If uncompressed (65 bytes), convert to compressed (33 bytes)
+        if (publicKey.length === 65) {
+          const isEven = publicKey[64]! % 2 === 0;
+          pkToHash = new Uint8Array(33);
+          pkToHash[0] = isEven ? 0x02 : 0x03;
+          pkToHash.set(publicKey.slice(1, 33), 1);
+        }
+
+        const computedHash = hash160(pkToHash);
         return program.every((byte, i) => byte === computedHash[i]);
       }
 

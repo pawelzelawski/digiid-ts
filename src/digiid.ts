@@ -120,8 +120,9 @@ function convertBits(data: number[], fromBits: number, toBits: number, pad: bool
  * Hash message with Bitcoin/DigiByte message signing format
  */
 function hashMessage(message: string, messagePrefix: string): Uint8Array {
+  // The messagePrefix already includes the length byte (e.g., '\x19DigiByte Signed Message:\n')
+  // where \x19 = 25 = length of "DigiByte Signed Message:\n"
   const prefixBuffer = new TextEncoder().encode(messagePrefix);
-  const prefixLength = new Uint8Array([prefixBuffer.length]);
 
   const messageBuffer = new TextEncoder().encode(message);
   const messageLengthBytes: number[] = [];
@@ -146,13 +147,11 @@ function hashMessage(message: string, messagePrefix: string): Uint8Array {
 
   const messageLengthBuffer = new Uint8Array(messageLengthBytes);
 
-  // Concatenate: prefixLength + prefix + messageLengthBuffer + message
-  const totalLength = prefixLength.length + prefixBuffer.length + messageLengthBuffer.length + messageBuffer.length;
+  // Concatenate: prefix + messageLengthBuffer + message
+  const totalLength = prefixBuffer.length + messageLengthBuffer.length + messageBuffer.length;
   const combined = new Uint8Array(totalLength);
   let offset = 0;
 
-  combined.set(prefixLength, offset);
-  offset += prefixLength.length;
   combined.set(prefixBuffer, offset);
   offset += prefixBuffer.length;
   combined.set(messageLengthBuffer, offset);
@@ -174,39 +173,41 @@ function recoverPublicKey(messageHash: Uint8Array, signature: Uint8Array): Uint8
   const firstByte = signature[0];
   if (firstByte === undefined) throw new Error('Invalid signature');
 
-  const recoveryId = firstByte - 27;
-  const compressed = recoveryId >= 4;
-  const actualRecoveryId = recoveryId % 4;
-
-  if (actualRecoveryId < 0 || actualRecoveryId > 3) {
-    throw new Error('Invalid recovery ID');
-  }
-
   const r = signature.slice(1, 33);
   const s = signature.slice(33, 65);
 
-  // Create signature object
-  const sig = new secp256k1.Signature(
-    BigInt('0x' + Array.from(r).map(b => b.toString(16).padStart(2, '0')).join('')),
-    BigInt('0x' + Array.from(s).map(b => b.toString(16).padStart(2, '0')).join(''))
-  ).addRecoveryBit(actualRecoveryId);
+  const results: Uint8Array[] = [];
 
-  try {
-    const point = sig.recoverPublicKey(messageHash);
-    // Return both compressed and uncompressed versions to try both
-    const compressedBytes = point.toBytes(true);
-    const uncompressedBytes = point.toBytes(false);
+  // Try all recovery IDs (0-3) to be thorough
+  // Some implementations may encode the recovery ID differently
+  for (let recId = 0; recId < 4; recId++) {
+    try {
+      // Create signature object
+      const sig = new secp256k1.Signature(
+        BigInt('0x' + Array.from(r).map(b => b.toString(16).padStart(2, '0')).join('')),
+        BigInt('0x' + Array.from(s).map(b => b.toString(16).padStart(2, '0')).join(''))
+      ).addRecoveryBit(recId);
 
-    // Based on the recoveryId flag, return the appropriate format(s)
-    if (compressed) {
-      return [compressedBytes];
-    } else {
-      // For uncompressed signatures, try both formats as different wallets may encode differently
-      return [uncompressedBytes, compressedBytes];
+      const point = sig.recoverPublicKey(messageHash);
+
+      // Add both compressed and uncompressed versions
+      const compressedBytes = point.toBytes(true);
+      const uncompressedBytes = point.toBytes(false);
+
+      // Add compressed first (more common for SegWit)
+      results.push(compressedBytes);
+      results.push(uncompressedBytes);
+    } catch (e) {
+      // This recovery ID didn't work, try the next one
+      continue;
     }
-  } catch (e) {
-    throw new Error('Failed to recover public key: ' + (e instanceof Error ? e.message : String(e)));
   }
+
+  if (results.length === 0) {
+    throw new Error('Failed to recover any public keys');
+  }
+
+  return results;
 }
 
 /**
@@ -257,6 +258,7 @@ function verifyAddress(address: string, publicKey: Uint8Array): boolean {
       if (version === 0) {
         // For witness v0 P2WPKH, use hash160 of compressed public key
         let pkToHash = publicKey;
+
         // If uncompressed (65 bytes), convert to compressed (33 bytes)
         if (publicKey.length === 65) {
           const isEven = publicKey[64]! % 2 === 0;

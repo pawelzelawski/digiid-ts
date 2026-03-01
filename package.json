@@ -1,6 +1,6 @@
 {
   "name": "digiid-ts",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "A modern TypeScript implementation of the DigiID authentication protocol.",
   "main": "dist/digiid-ts.umd.js",
   "module": "dist/digiid-ts.es.js",
@@ -76,6 +76,8 @@
   },
   "overrides": {
     "glob": "^10.5.0",
-    "brace-expansion": "^2.0.2"
+    "brace-expansion": "^2.0.2",
+    "rollup": "^4.59.0",
+    "minimatch": "^10.2.3"
   }
 }

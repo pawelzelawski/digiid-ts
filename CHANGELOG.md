@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2026-05-15
+### Security
+- Pinned transitive `fast-uri` to `^3.1.2` via `overrides` to address:
+  - Path traversal via percent-encoded dot segments (`GHSA-q3j6-qgpj-74h6`, `CVE-2026-6321`).
+  - Host confusion via percent-encoded authority delimiters (`GHSA-v39h-62p7-jpjc`, `CVE-2026-6322`).
+
 ## [2.0.3] - 2026-04-18
 ### Security
 - Upgraded `vite` dev dependency to `^6.4.2` to address two CVEs:
@@ -35,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests.
 - Usage examples.
 
-[Unreleased]: https://github.com/pawelzelawski/digiid-ts/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/pawelzelawski/digiid-ts/compare/v2.0.4...HEAD
+[2.0.4]: https://github.com/pawelzelawski/digiid-ts/compare/v2.0.3...v2.0.4
+[2.0.3]: https://github.com/pawelzelawski/digiid-ts/compare/v1.1.0...v2.0.3
+[1.1.0]: https://github.com/pawelzelawski/digiid-ts/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/pawelzelawski/digiid-ts/compare/v1.0.0...v1.0.1
-[1.0.0]: https://github.com/pawelzelawski/digiid-ts/releases/tag/v1.0.0 
+[1.0.0]: https://github.com/pawelzelawski/digiid-ts/releases/tag/v1.0.0

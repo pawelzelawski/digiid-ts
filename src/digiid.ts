@@ -1,6 +1,6 @@
 import { secp256k1 } from '@noble/curves/secp256k1.js';
-import { ripemd160 } from '@noble/hashes/ripemd160';
-import { sha256 } from '@noble/hashes/sha256';
+import { ripemd160 } from '@noble/hashes/legacy.js';
+import { sha256 } from '@noble/hashes/sha2.js';
 import { randomBytes } from 'crypto';
 import {
   DigiIDCallbackData,
@@ -197,7 +197,7 @@ function recoverPublicKey(messageHash: Uint8Array, signature: Uint8Array): Uint8
       // Add compressed first (more common for SegWit)
       results.push(compressedBytes);
       results.push(uncompressedBytes);
-    } catch (e) {
+    } catch {
       // This recovery ID didn't work, try the next one
       continue;
     }
@@ -295,7 +295,7 @@ export async function _internalVerifySignature(
 
   try {
     // Decode base64 signature
-    const sigBytes = Uint8Array.from(atob(signature), c => c.charCodeAt(0));
+    const sigBytes = Uint8Array.from(globalThis.atob(signature), c => c.charCodeAt(0));
 
     if (sigBytes.length !== 65) {
       throw new Error('Invalid signature length');

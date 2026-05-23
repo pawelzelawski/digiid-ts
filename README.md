@@ -31,7 +31,7 @@ pnpm add digiid-ts
 The package provides both ESM and UMD builds, with full TypeScript type definitions.
 
 ### Requirements
-- Node.js 16.0.0 or higher
+- Node.js 20.19.0 or higher
 - TypeScript 4.5 or higher (for TypeScript users)
 
 ## Usage
@@ -117,7 +117,7 @@ app.post('/auth/callback', async (req, res) => {
 
 ### Prerequisites
 
-*   Node.js 18+
+*   Node.js 20.19.0+
 *   npm 9+
 
 ### Setup

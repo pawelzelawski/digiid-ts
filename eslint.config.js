@@ -1,7 +1,12 @@
 import js from '@eslint/js';
+import path from 'path';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tseslintParser from '@typescript-eslint/parser';
+import { fileURLToPath } from 'url';
 import prettier from 'eslint-config-prettier';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default [
   // Global ignores (apply first)
@@ -23,7 +28,7 @@ export default [
       parser: tseslintParser,
       parserOptions: {
         project: ['./tsconfig.json'], // Apply project-based parsing only here
-        tsconfigRootDir: '.',
+        tsconfigRootDir: __dirname,
       },
       globals: { // Define Node.js globals if needed
         NodeJS: true

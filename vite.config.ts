@@ -12,6 +12,7 @@ export default defineConfig({
   plugins: [
     dts({ // Generate declaration files
       insertTypesEntry: true, // Create a single entry point for types
+      exclude: ['src/__tests__/**'], // Keep test declarations out of the published package
     }),
   ],
   build: {

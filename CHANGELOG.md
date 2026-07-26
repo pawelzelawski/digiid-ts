@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2] - 2026-07-26
+### Security
+- Upgraded transitive `fast-uri` to 4.1.1, resolving its IDN canonicalization and backslash authority-delimiter host-confusion vulnerabilities.
+- Upgraded transitive `brace-expansion` to 5.0.8 and `postcss` to 8.5.23, resolving all remaining npm audit findings.
+
+### Changed
+- Updated compatible development tooling dependencies to their latest stable releases.
+
 ## [2.0.4] - 2026-05-15
 ### Security
 - Pinned transitive `fast-uri` to `^3.1.2` via `overrides` to address:
@@ -41,7 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests.
 - Usage examples.
 
-[Unreleased]: https://github.com/pawelzelawski/digiid-ts/compare/v2.0.4...HEAD
+[Unreleased]: https://github.com/pawelzelawski/digiid-ts/compare/v3.0.2...HEAD
+[3.0.2]: https://github.com/pawelzelawski/digiid-ts/compare/v3.0.1...v3.0.2
 [2.0.4]: https://github.com/pawelzelawski/digiid-ts/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/pawelzelawski/digiid-ts/compare/v1.1.0...v2.0.3
 [1.1.0]: https://github.com/pawelzelawski/digiid-ts/compare/v1.0.1...v1.1.0

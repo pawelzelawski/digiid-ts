@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-10-04
+### Changed
+- **Breaking:** Raised the minimum supported Node.js version to `22.12.0` (previously `20.19.0`).
+- Updated runtime dependencies to their latest stable releases:
+  - `@noble/curves` to `^2.4.0`.
+  - `@noble/hashes` to `^2.4.0`.
+- Updated development tooling to the latest stable releases, including `vite` 8, `vitest` 5, `eslint` 10, `vite-plugin-dts` 5, and `@types/node` 26. TypeScript is held at `6.0.3`, the latest release supported by the `@typescript-eslint` toolchain.
+
+### Security
+- Resolved all `npm audit` findings by upgrading the affected tooling and transitive dependencies:
+  - `brace-expansion` to `5.0.12`, addressing quadratic-time expansion and uncontrolled-recursion CPU denial-of-service issues.
+  - `@humanfs/node` to `0.16.8`, addressing a symlink-following recursive copy.
+  - `vitest`, `@vitest/mocker`, and `@vitest/coverage-v8` to `5.0.3`, addressing a path-traversal / arbitrary file read.
+- Removed obsolete `overrides` entries that were only required for the previously pinned dependency versions.
+
 ## [3.0.2] - 2026-07-26
 ### Security
 - Upgraded transitive `fast-uri` to 4.1.1, resolving its IDN canonicalization and backslash authority-delimiter host-confusion vulnerabilities.
@@ -49,7 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests.
 - Usage examples.
 
-[Unreleased]: https://github.com/pawelzelawski/digiid-ts/compare/v3.0.2...HEAD
+[Unreleased]: https://github.com/pawelzelawski/digiid-ts/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/pawelzelawski/digiid-ts/compare/v3.0.2...v4.0.0
 [3.0.2]: https://github.com/pawelzelawski/digiid-ts/compare/v3.0.1...v3.0.2
 [2.0.4]: https://github.com/pawelzelawski/digiid-ts/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/pawelzelawski/digiid-ts/compare/v1.1.0...v2.0.3

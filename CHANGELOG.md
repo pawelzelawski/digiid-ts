@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 2026-11-03
+### Security
+- Updated Vite to 8.3.5 to address development server and editor integration vulnerabilities.
+- Overrode the transitive development dependency `minimatch` to 11.0.1 to address a glob pattern denial of service.
+
+### Changed
+- Updated compatible development dependencies; TypeScript remains at 6.0.3 pending TypeScript ESLint support for version 7.
+
 ## [4.0.0] - 2026-10-04
 ### Changed
 - **Breaking:** Raised the minimum supported Node.js version to `22.12.0` (previously `20.19.0`).
@@ -64,7 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests.
 - Usage examples.
 
-[Unreleased]: https://github.com/pawelzelawski/digiid-ts/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/pawelzelawski/digiid-ts/compare/v4.0.1...HEAD
+[4.0.1]: https://github.com/pawelzelawski/digiid-ts/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/pawelzelawski/digiid-ts/compare/v3.0.2...v4.0.0
 [3.0.2]: https://github.com/pawelzelawski/digiid-ts/compare/v3.0.1...v3.0.2
 [2.0.4]: https://github.com/pawelzelawski/digiid-ts/compare/v2.0.3...v2.0.4
